@@ -3,10 +3,12 @@ import bodyParser from "body-parser";
 import mongoose, { Schema, Document } from "mongoose";
 import short from 'short-uuid';
 
-const defaultDomain = `http://localhost:${process.env.PORT}/r`;
-const urlShortnerUrl = `${process.env.DOMAIN}/r` || defaultDomain;
+const PORT = process.env.PORT || 3001;
+const URL = process.env.URL || `http://localhost:${PORT}`;
+const defaultRedireUrl = `${URL}/r`;
+const urlShortnerUrl = `${process.env.DOMAIN}/r` || defaultRedireUrl;
 
-const mongoUrl = process.env.MONGO_CONNECTION_STRING || 'mongodb://mongo/test2';
+const mongoUrl = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost/test2';
 mongoose.connect(mongoUrl, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true } ).then(
     () => { 
         /** ready to use. The `mongoose.connect()` promise resolves to undefined. */
@@ -39,7 +41,7 @@ const ShortUrlModel = mongoose.model<IShortUrl>('ShortUrl', ShortUrlSchema);
 
 const app = express();
 
-app.set("port", process.env.PORT || 3000);
+app.set("port", PORT);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -109,16 +111,17 @@ app.post('/api/shorturl', async (req: express.Request, res: express.Response) =>
 });
 
 app.put('/api/shorturl/:id', async (req: express.Request, res: express.Response) => {
-    let response = {};
+    let response: any = {};
     try {
         response = await ShortUrlModel.findByIdAndUpdate(req.params.id, req.body, { upsert: true });
 
-        if(!response) {
+        if(!response && !response._id) {
             return res.status(404).send({
                 message: "Note not found with id " + req.params.id
             });
         }
     } catch (e) {
+        res.status(404);
         response = e;
     }
 
@@ -135,6 +138,7 @@ app.delete('/api/shorturl/:id', async (req: express.Request, res: express.Respon
             });
         }
     } catch (e) {
+        res.status(500);
         response = e;
     }
 
