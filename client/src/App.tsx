@@ -5,6 +5,8 @@ import 'bootstrap/dist/css/bootstrap.css';
 import Notifications, { NotificationProvider, NotificationContext } from './components/Notification';
 import Button from './components/Button';
 import Modal from './components/Modal';
+import Form from './components/Form';
+import Field from './components/Form/Field';
 
 const App = () => {
 
@@ -34,22 +36,47 @@ const App = () => {
                     <Button onClick={() => setshowAddUrlModal(true)}>Add Short Url</Button>
                     <Modal showModal={showAddUrlModal}>
                         <div className='modal-body'>
-                            <form id='newUrlForm'>
-                                <div className="form-group">
-                                    <label htmlFor="httpCode">Http Code</label>
-                                    <input type="text" className="form-control" id="httpCode" placeholder="Http Code" />
-                                    {/* <small id="emailHelp" className="form-text text-muted">We'll never share your email with anyone else.</small> */}
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="shortUrl">Short Url</label>
-                                    <input type="text" className="form-control" id="shortUrl" placeholder="Short Url" />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="shortUrl">Start Date</label>
-                                    <input type="text" className="form-control" id="shortDate" placeholder="Short Date" />
-                                </div>
-                                <button type="submit" className="btn btn-primary">Submit</button>
-                            </form>
+                            <Form 
+                                submit={(formdata) => {
+                                    console.log('formdata >> ', formdata);
+                                }}
+                            >
+                                <Field
+                                    type='multiSelect'
+                                    label='Http Code'
+                                    name='httpCode'
+                                    options={[
+                                        { label: '301', value: 301 },
+                                        { label: '302', value: 302, isSelected: true }
+                                    ]}
+                                />
+                                <Field
+                                    type='text'
+                                    label='From'
+                                    placeholder='Short Url'
+                                    name='shortUrl'
+                                    value=''
+                                />
+                                <Field
+                                    type='text'
+                                    label='To'
+                                    placeholder='Long Url'
+                                    name='longUrl'
+                                    value=''
+                                />
+                                <Field
+                                    type='datetime-local'
+                                    label='Start Date'
+                                    name='startDate'
+                                    value=''
+                                />
+                                <Field
+                                    type='datetime-local'
+                                    label='End Date'
+                                    name='endDate'
+                                    value=''
+                                />
+                            </Form>
                         </div>
                     </Modal>
                 </div>
