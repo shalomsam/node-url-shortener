@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import './App.css';
 import UrlList from './components/UrlList';
 import 'bootstrap/dist/css/bootstrap.css';
 import Notifications, { NotificationProvider, NotificationContext } from './components/Notification';
 import Button from './components/Button';
 import Modal from './components/Modal';
-import Form from './components/Form';
+import Form, { IFormData } from './components/Form';
 import Field from './components/Form/Field';
 
 const App = () => {
 
     const [list, setList] = useState([]);
     const [showAddUrlModal, setshowAddUrlModal] = useState(false);
+    const { addNotification } = useContext(NotificationContext);
 
     useEffect(() => {
         const fetchUrlList = async () => {
@@ -26,7 +27,27 @@ const App = () => {
             }
         }
         fetchUrlList();
-    }, [])
+    }, []);
+
+    const addShortUrl = async (formData: IFormData) => {
+        try {
+            const result = await fetch('/api/shortUrl', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const response = await result.json();
+            addNotification({ type: 'success', message: 'New Short Url created!' });
+            return response;
+        } catch (e) {
+            console.log('Error >> ', e);
+            addNotification({ type: 'error', message: 'Error trying to create short url.' });
+            return { status: 'error', ...e };
+        }
+    }
 
     return (
         <NotificationProvider>
@@ -36,9 +57,11 @@ const App = () => {
                     <Button onClick={() => setshowAddUrlModal(true)}>Add Short Url</Button>
                     <Modal showModal={showAddUrlModal}>
                         <div className='modal-body'>
-                            <Form 
-                                submit={(formdata) => {
+                            <Form
+                                submit={async (formdata) => {
                                     console.log('formdata >> ', formdata);
+                                    await addShortUrl(formdata);
+                                    setshowAddUrlModal(false);
                                 }}
                             >
                                 <Field

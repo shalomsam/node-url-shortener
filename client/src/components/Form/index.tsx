@@ -4,8 +4,12 @@ interface FormProps {
     submit: (props: any, e?: any) => void;
 }
 
+export interface IFormData {
+    [key: string]: string;
+};
+
 export type FormContextType = {
-    formData: { [key: string]: string; };
+    formData: IFormData;
     setFormData: (data: any) => void;
     addFormData: (data: any) => void;
 }

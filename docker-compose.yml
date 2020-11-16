@@ -1,17 +1,30 @@
 version: "3.1"
 services:
-    backend:
-        container_name: backend_node
-        build: ./
+    client:
+        container_name: react_client
+        build: ./client
         ports:
             - "3000:3000"
         volumes:
-            - .:/app
+            - .:/client
+        links:
+            - api
+    api:
+        container_name: node_api
+        build: ./server
+        ports:
+            - "3001:3001"
+        volumes:
+            - .:/server
         links:
             - mongo
     mongo:
         image: mongo
-        volumes: 
-            - ./mongo-volume:/data/db
+        volumes:
+            - mongodb:/data/db
+            - mongodb_config:/data/configdb
         ports:
             - "27017:27017"
+volumes:
+    mongodb:
+    mongodb_config:
