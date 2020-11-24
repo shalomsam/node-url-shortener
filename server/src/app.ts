@@ -4,11 +4,12 @@ import mongoose, { Schema, Document } from "mongoose";
 import short from 'short-uuid';
 
 const PORT = process.env.PORT || 3001;
-const URL = process.env.URL || `http://localhost:${PORT}`;
-const defaultRedireUrl = `${URL}/r`;
-const urlShortnerUrl = `${process.env.DOMAIN}/r` || defaultRedireUrl;
+const DOMAIN = process.env.DOMAIN || '127.0.0.1'
+const BASE_URL = process.env.URL || `http://${DOMAIN}:${PORT}`;
+const defaultRedireUrl = `${BASE_URL}/r`;
+const urlShortnerBaseUrl = process.env.BASE_URL && `${process.env.BASE_URL}/r` || defaultRedireUrl;
 
-const mongoUrl = process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost/test2';
+const mongoUrl = process.env.MONGO_CONNECTION_STRING || 'mongodb://mongo/test2';
 mongoose.connect(mongoUrl, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true } ).then(
     () => { 
         /** ready to use. The `mongoose.connect()` promise resolves to undefined. */
@@ -41,9 +42,12 @@ const ShortUrlModel = mongoose.model<IShortUrl>('ShortUrl', ShortUrlSchema);
 
 const app = express();
 
+app.set("domain", DOMAIN);
 app.set("port", PORT);
+app.set("baseUrl", BASE_URL);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+// Todo: add auth
 
 app.get('/r/:shortPath', async (req: express.Request, res: express.Response) => {
     const response = await ShortUrlModel.findOne({ shortPath: req.params.shortPath });
@@ -52,8 +56,17 @@ app.get('/r/:shortPath', async (req: express.Request, res: express.Response) => 
     // sendAnalytics(req, response)
     // checkExpired()
     return res.redirect(redirectCode, redirectUrl);
-})
+});
 
+// Todo: configurations in DB?
+app.get('/api/config', async (req: express.Request, res: express.Response) => {
+    return res.json({
+        baseUrl: BASE_URL,
+        urlShortnerBaseUrl
+    });
+});
+
+// Todo: move to controller files
 app.get('/api/shorturl', async (req: express.Request, res: express.Response) => {
     let list: object;
     try {

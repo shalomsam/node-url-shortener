@@ -1,18 +1,17 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
-import UrlList from './components/UrlList';
+import UrlList, { IUrlList } from './components/UrlList';
 import 'bootstrap/dist/css/bootstrap.css';
 import Notifications, { NotificationProvider, NotificationContext } from './components/Notification';
 import Button from './components/Button';
-import Modal from './components/Modal';
-import Form, { IFormData } from './components/Form';
-import Field from './components/Form/Field';
+import AddUrlModal from './hoc/AddUrlModal';
+import { GlobalConfig } from './components/typings';
 
 const App = () => {
 
-    const [list, setList] = useState([]);
-    const [showAddUrlModal, setshowAddUrlModal] = useState(false);
-    const { addNotification } = useContext(NotificationContext);
+    const [list, setList] = useState<IUrlList[]>([]);
+    const [globalConfig, setGlobalConfig] = useState<GlobalConfig | undefined>(undefined);
+    const [showAddUrlModal, setShowAddUrlModal] = useState(false);
 
     useEffect(() => {
         const fetchUrlList = async () => {
@@ -20,93 +19,47 @@ const App = () => {
             try {
                 const result = await fetch('/api/shorturl');
                 data = await result.json();
-                console.log('data >>', data);
                 setList(data);
             } catch (e) {
                 console.error('Error >>', e);
             }
         }
+
+        const fetchConfig = async () => {
+            let config;
+            try {
+                const result = await fetch('/api/config');
+                config = await result.json();
+                setGlobalConfig(config);
+            } catch (e) {
+                console.log('error > ', e);
+            }
+        }
+
+        fetchConfig();
         fetchUrlList();
     }, []);
-
-    const addShortUrl = async (formData: IFormData) => {
-        try {
-            const result = await fetch('/api/shortUrl', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-
-            const response = await result.json();
-            addNotification({ type: 'success', message: 'New Short Url created!' });
-            return response;
-        } catch (e) {
-            console.log('Error >> ', e);
-            addNotification({ type: 'error', message: 'Error trying to create short url.' });
-            return { status: 'error', ...e };
-        }
-    }
 
     return (
         <NotificationProvider>
             <div className="App">
                 <h1>Url List:</h1>
                 <div className='actionWrp'>
-                    <Button onClick={() => setshowAddUrlModal(true)}>Add Short Url</Button>
-                    <Modal showModal={showAddUrlModal}>
-                        <div className='modal-body'>
-                            <Form
-                                submit={async (formdata) => {
-                                    console.log('formdata >> ', formdata);
-                                    await addShortUrl(formdata);
-                                    setshowAddUrlModal(false);
-                                }}
-                            >
-                                <Field
-                                    type='multiSelect'
-                                    label='Http Code'
-                                    name='httpCode'
-                                    options={[
-                                        { label: '301', value: 301 },
-                                        { label: '302', value: 302, isSelected: true }
-                                    ]}
-                                />
-                                <Field
-                                    type='text'
-                                    label='From'
-                                    placeholder='Short Url'
-                                    name='shortUrl'
-                                    value=''
-                                />
-                                <Field
-                                    type='text'
-                                    label='To'
-                                    placeholder='Long Url'
-                                    name='longUrl'
-                                    value=''
-                                />
-                                <Field
-                                    type='datetime-local'
-                                    label='Start Date'
-                                    name='startDate'
-                                    value=''
-                                />
-                                <Field
-                                    type='datetime-local'
-                                    label='End Date'
-                                    name='endDate'
-                                    value=''
-                                />
-                            </Form>
-                        </div>
-                    </Modal>
+                    <Button onClick={() => setShowAddUrlModal(true)}>Add Short Url</Button>
+                    {/*  */}
+                    <AddUrlModal
+                        showAddUrlModal={showAddUrlModal}
+                        setShowAddUrlModal={setShowAddUrlModal}
+                        onSuccess={(update: IUrlList) => {
+                            setList([...list, update])
+                        }}
+                    />
                 </div>
-                <UrlList list={list} />
+                <UrlList config={globalConfig} list={list} />
             </div>
             <NotificationContext.Consumer>
-                {({ notifications }) => {
+                {({ notifications, setTtl }) => {
+                    setTtl(1200);
                     return (
                         <Notifications notifications={notifications} />
                     )

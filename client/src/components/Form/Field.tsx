@@ -1,35 +1,93 @@
-import React, { FC, useContext, useState } from 'react';
-import { FormContext, FormContextType } from '.';
+import React, { FC, useState } from 'react';
 
 interface IOptions {
     label: string;
-    value?: string | number;
-    isSelected?: boolean;
+    value: string;
 }
+
+interface InputStatus {
+    status: 'error' | 'success';
+    message: string;
+}
+
+type Validation = (value: string) => InputStatus;
 
 interface FieldProps {
     label: string;
     name: string;
-    type?: 'text' | 'password' | 'select' | 'multiSelect' | 'date' | 'datetime-local' | 'checkbox' | 'radio';
+    type?: 'text' | 'password' | 'select' | 'multi-select' | 'date' | 'datetime-local' | 'checkbox' | 'radio';
     options?: IOptions[];
-    value?: string | number;
+    value?: string | string[];
     placeholder?: string;
+    setDefaultDate?: boolean;
+    required?: boolean;
+    validations?: Validation[];
 }
 
-const Field: FC<FieldProps> = ({ type, label, name, value, placeholder, options }) => {
-    let { addFormData } = useContext<FormContextType>(FormContext as any);
-    const [ _value, setValue ] = useState(value);
-    const [ selectedOption, setSelectedOption ] = useState(0);
+const Field: FC<FieldProps> = ({
+    type,
+    label,
+    name,
+    placeholder,
+    options,
+    validations,
+    value = '',
+    setDefaultDate = false,
+    required = false,
+}) => {
+    // let { addFormData } = useContext<FormContextType>(FormContext as any);
+    let defaultValue = value;
+    if (options && options.length) {
+        defaultValue = String(options[0].value);
+        if (type === 'multi-select') {
+            defaultValue = [defaultValue];
+        }
+    }
+
+    const [ _value, setValue ] = useState(defaultValue);
+    const [ inputMsgs, setInputMsgs ] = useState([] as InputStatus[]);
 
     const onChange = (newValue: any) => {
-        addFormData({ [name]: newValue });
         setValue(newValue);
     }
+
+    const onBlur = (newVal: string) => {
+        if (required && !newVal) {
+            setInputMsgs([...inputMsgs, { status: 'error', message: `Please provide a valid value for ${label}` }]);
+        } else if (validations?.length) {
+            // eslint-disable-next-line array-callback-return
+            validations.map((validation) => {
+                const isValid = validation(newVal);
+                if (typeof isValid === 'string') {
+                    setInputMsgs([...inputMsgs, isValid])
+                }
+            });
+        }
+    }
+
+    const lastMsg: InputStatus | undefined = inputMsgs[inputMsgs.length - 1] || undefined;
+
+    const getStatusClass = (iStatus: InputStatus) => {
+        if (iStatus.status === 'error') {
+            return 'invalid-feedback';
+        } else if (iStatus.status === 'success') {
+            return 'valid-feedback';
+        } else {
+            return '';
+        }
+    };
+
+    let inputMsgEl = lastMsg ? 
+        (<small
+            className={getStatusClass(lastMsg)}
+        >
+            {lastMsg.message}
+        </small>) : null;
 
     let fieldContent = null;
 
     if (type === 'text' || type === 'password' || type === 'date' || type === 'datetime-local') {
-        if ((type === 'date' || type === 'datetime-local') && _value === '') {
+        if ((type === 'date' || type === 'datetime-local') && setDefaultDate && _value === '') {
             const date = new Date();
             let defaultDate = date.toISOString();
             defaultDate = defaultDate.substring(0, defaultDate.length - 1);
@@ -38,8 +96,6 @@ const Field: FC<FieldProps> = ({ type, label, name, value, placeholder, options 
             }
             setValue(defaultDate);
         }
-        
-        addFormData({ [name]: _value });
 
         fieldContent = (
             <>
@@ -52,29 +108,21 @@ const Field: FC<FieldProps> = ({ type, label, name, value, placeholder, options 
                     value={_value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder || label}
+                    onBlur={(e) => onBlur(e.target.value)}
+                    required={required}
                 />
+                {inputMsgEl}
             </>
         );
     }
 
-    if ((type === 'select' || type === 'multiSelect') && options?.length) {
-        addFormData({ [name]: options[selectedOption].value })
+    if ((type === 'select' || type === 'multi-select') && options?.length) {
         
-        const htmlOptions = options?.map(({ label, value, isSelected }, i) => {
-            if (isSelected) {
-                setSelectedOption(i);
-            }
-
-            const onClick = () => {
-                setSelectedOption(i);
-                addFormData({ [name]: options[selectedOption].value });
-            };
-
+        const htmlOptions = options?.map(({ label, value }) => {
             return (
                 <option
+                    key={`${name}-${value}`}
                     value={value}
-                    selected={i === selectedOption}
-                    onClick={onClick}
                 >
                     {label}
                 </option>
@@ -83,20 +131,40 @@ const Field: FC<FieldProps> = ({ type, label, name, value, placeholder, options 
 
         fieldContent = (
             <div className="form-group">
-                <label htmlFor={name}>Example select</label>
+                <label htmlFor={name}>{label}</label>
                 <select
                     id={name}
                     name={name}
                     className="form-control"
-                    multiple={type === 'multiSelect'}
+                    multiple={type === 'multi-select'}
+                    value={_value}
+                    onChange={(e) => {
+                        let val = e.target.value;
+                        if (type === 'multi-select') {
+                            console.log('val > ', val);
+                            if (_value.indexOf(val) > -1) {
+                                val = (_value as string[]).filter((el: string) => el !== val) as any;
+                                console.log('_value > ', _value, val);
+                            } else {
+                                val = [...(_value as any), val] as any;
+                            }
+                        }
+                        setValue(val);
+                        // addFormData({ [name]: val });
+                    }}
+                    onBlur={(e) => onBlur(e.target.value)}
+                    required={required}
                 >
                     {htmlOptions}
                 </select>
+                {inputMsgEl}
             </div>
         )
     } else if (type === 'select' && options?.length === 0) {
         throw new Error(`<Field> type provided as '${type}' but options prop is empty!`);
     }
+
+    // TODO: support checkbox & radio
 
     return (
         <div className="form-group">

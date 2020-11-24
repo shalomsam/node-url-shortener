@@ -1,8 +1,14 @@
 import React, { createContext, FC, useState } from 'react';
 import './styles.css';
 
+export enum NotificationTypes {
+    error = 'danger',
+    success = 'success',
+    info = 'info'
+}
+
 interface INotification {
-    type: 'error' | 'success' | 'info';
+    type: NotificationTypes;
     message: string;
 }
 
