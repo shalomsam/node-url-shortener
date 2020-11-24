@@ -13,6 +13,7 @@ Simple Url shortener using typescript/nodejs + mongodb + containerized using Doc
 ```
 git clone https://skuruvil@bitbucketdev.ca.bestbuy.com/scm/~skuruvil/bby-url-shortner.git
 cd bby-url-shortner
+mkdir mongo-volume
 docker-compose up -d
 ```
 Server will be running on http://localhost:3000

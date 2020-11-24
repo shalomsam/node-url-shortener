@@ -53,8 +53,8 @@ app.get('/r/:shortPath', async (req: express.Request, res: express.Response) => 
     const response = await ShortUrlModel.findOne({ shortPath: req.params.shortPath });
     const redirectCode = response.httpCode;
     const redirectUrl = response.longUrl;
-    // sendAnalytics(req, response)
-    // checkExpired()
+    // Todo: sendAnalytics(req, response)
+    // Todo: checkExpired()
     return res.redirect(redirectCode, redirectUrl);
 });
 
