@@ -104,7 +104,8 @@ app.post('/api/shorturl', async (req: express.Request, res: express.Response) =>
             shortPath,
         };
     } else if (req.body.shortPath) {
-        let shortPath = req.body.shortPath.trim('/');
+        // trim first slash "/"
+        let shortPath = req.body.shortPath.replace(/^\//g, "");
         shortUrlData = {
             ...shortUrlData,
             shortPath,

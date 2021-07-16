@@ -36,7 +36,7 @@ const AddUrlModal: FC<Props> = ({
             addNotification({ type: NotificationTypes.success, message: 'New Short Url created!' });
             onSuccess(response);
             return response;
-        } catch (e) {
+        } catch (e: any) {
             console.log('Error >> ', e);
             const message = e?.message || 'Error trying to create short url.';
             addNotification({ type: NotificationTypes.error, message });
@@ -70,8 +70,8 @@ const AddUrlModal: FC<Props> = ({
                     <Field
                         type='text'
                         label='From'
-                        placeholder='Short Url'
-                        name='shortUrl'
+                        placeholder='Short relative path'
+                        name='shortPath'
                         value=''
                     />
                     <Field
